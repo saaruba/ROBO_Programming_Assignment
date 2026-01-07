@@ -35,40 +35,48 @@ class EmergencyInventoryNode(Node):
         )
 
     def scan_callback(self, msg):
-        mid = len(msg.ranges) // 2
-        front_ranges = msg.ranges[mid - 10 : mid + 10]
-
-        # Remove zero / invalid values
-        front_ranges = [r for r in front_ranges if r > 0.0]
-
-        if not front_ranges:
-            return
+        ranges = [
+            r if 0.05 < r < msg.range_max else msg.range_max
+            for r in msg.ranges
+        ]
         
-        front_distance = min(front_ranges)
-
+        mid = len(ranges) // 2
+        
+        front = min(ranges[mid - 10: mid + 10])
+        left  = min(ranges[mid + 30: mid + 60])
+        right = min(ranges[mid - 60: mid - 30])
+        
         cmd = Twist()
 
-        if front_distance > 0.35:
-            cmd.linear.x = 0.1
+    # Decision logic
+        if front > 0.5:
+            cmd.linear.x = 0.15
             cmd.angular.z = 0.0
-            self.get_logger().info('Moving forward')
+            self.get_logger().info("Path clear → Moving forward")
 
         else:
             cmd.linear.x = 0.0
-            cmd.angular.z = 1.0     # turn
-            self.get_logger().info('Obstacle detected! Turning')
-        
+
+            if left > right:
+                cmd.angular.z = 0.8
+                self.get_logger().info("Obstacle → Turning LEFT")
+            
+            else:
+                cmd.angular.z = -0.8
+                self.get_logger().info("Obstacle → Turning RIGHT")
+
         self.cmd_pub.publish(cmd)
 
 
 def main(args=None):
-    rclpy.init(args=args)
-    node = EmergencyInventoryNode()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
-
-
+        rclpy.init(args=args)
+        node = EmergencyInventoryNode()
+        rclpy.spin(node)
+        node.destroy_node()
+        rclpy.shutdown()
 if __name__ == '__main__':
-    main()
+        main()    
 
+    
+
+ 
