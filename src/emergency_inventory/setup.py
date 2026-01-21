@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'inventory_node = emergency_inventory.inventory_node:main',
+            'waypoint_mission = emergency_inventory.waypoint_mission:main',
         ],
     },
 )

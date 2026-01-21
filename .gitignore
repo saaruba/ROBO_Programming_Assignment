@@ -62,3 +62,13 @@ __pycache__/
 # Editor & OS files
 .vscode/
 .DS_Store
+
+# Debug graphs / exports
+frames_*.pdf
+frames_*.gv
+
+# Gazebo local cache
+~/.gazebo/
+
+# Results files (auto-generated)
+results.json

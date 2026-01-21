@@ -1,84 +1,188 @@
-## ROS2 Workspace Template
+Emergency Inventory Robot – CMP9767
 
-This repository serves as a template for creating ROS2 packages, equipped with a basic CI workflow and devcontainer configuration.
+Autonomous Navigation and Vision-Based Object Inventory
 
-### Development Environment Setup
+1. Project Overview
 
-To begin development in a containerized environment:
+This project implements an autonomous mobile robot system using ROS 2 Humble that can:
 
-1. **Use this repo as a template (You only do this once!):**
-   The best way to work with this repo is to use it as a template for your ROS package development, to do so, in the top right corner select `Use this template` and then `Create new repository`:
-   <img width="715" alt="image" src="https://github.com/user-attachments/assets/1d60f491-5e35-4bed-be62-3d35aba7e6b7">
+Navigate autonomously inside a custom Gazebo world
 
-   Alternatively, you may choose to "Fork" the repository ([read here about the differences](https://docs.github.com/en/enterprise-server@2.22/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)). However, if you create a "fork" your repository will be public, which you may want to avoid for assessed work.
+Localise itself using AMCL
 
-   Then, in the next step specify the owner (yourself) and the repository name (e.g. `cmp3103`) you want to create as shown below (You are recommended to make this a _private_ repository until the marking of the assessment is complete):
+Follow a predefined inspection route using waypoints
 
-   <img width="735" alt="image" src="https://github.com/user-attachments/assets/8b48fb41-d389-432b-80c4-9f623bc3f793">
+Detect emergency-related objects using camera-based vision
 
-   You will end up having your own repository, which looks something like this:
+Identify objects based on both colour and shape
 
-   <img width="923" alt="image" src="https://github.com/user-attachments/assets/dacc7fa2-43d5-46ce-94cb-1231ab63f4f3">
+Count detected objects without double-counting
+
+Safely return to the starting position after inspection
+
+The system integrates navigation, localisation, mapping, and computer vision, following the methods taught in the CMP9767 workshops.
+
+2. System Requirements
+
+Ubuntu 22.04
+
+ROS 2 Humble
+
+Gazebo (Classic)
+
+Nav2 Stack
+
+slam_toolbox
+
+OpenCV (via cv_bridge)
+
+This project was developed and tested inside the provided Docker development environment.
+
+3. Project Structure
+emergency_inventory/
+├── emergency_inventory/
+│   ├── inventory_detector.py
+│   ├── waypoint_mission.py
+│   └── __init__.py
+├── worlds/
+│   └── robo_programming.world
+├── maps/
+│   ├── robo_map.yaml
+│   └── robo_map.pgm
+├── setup.py
+├── package.xml
+└── README.md
+
+4. Building the Workspace
+
+After extracting the ZIP file:
+
+cd cmp9767-ws-main
+colcon build --symlink-install
+source install/setup.bash
 
 
-2. **Open in Visual Studio Code:**
-   Open your new repository in VSCode. The easiest way is to go to the git tab in VSCode and select `Clone Repository` and then copy the URL to the repository into the dialog that opens, e.g. `https://github.com/marc-hanheide/my-cmp3103-ws` in the example case. Then, choose the local folder you want to repository to be checked out into and choose to open the new workspace.
+Verify the executables:
 
-   <img width="577" alt="image" src="https://github.com/user-attachments/assets/71c78415-4461-464a-8b65-3ec046108846">
-
-   After cloning the repository and opening it, VSCode will prompt you if you want to "Reopen in Container", as it has found a devContainer configuration. You should say "yes". Alternatively if you don't see the prompt, you can use the command palette (`Ctrl+Shift+P`) and search for the "Reopen in Container" command.
-
-   <img width="451" alt="image" src="https://github.com/user-attachments/assets/6f4d2df4-bcb5-4887-8009-427aab59037c">
-
-3. **Container Setup:**
-   Once reopened in the container, VSCode will initiate the building process and pull all necessary dependencies. You can monitor the building log within VSCode. This may take a while (in particular if you have not previouly used the computer with the container), as you entire image with all installations is being pulled.
-   
-   <img width="485" alt="image" src="https://github.com/user-attachments/assets/c3b8202c-dc8e-4f04-a80d-09bc1719a7d0">
+ros2 pkg executables emergency_inventory
 
 
-5. **Verify Container Environment:**
-   After the build completes, VSCode will connect to the container. You can verify that you are within the container environment.
+You should see:
 
-   <img width="1746" alt="image" src="https://github.com/user-attachments/assets/47f9f505-d913-4b2c-a805-3d3ef0809751">
-   
-   See bottom left, saying "Dev Container":
-   <img width="311" alt="image" src="https://github.com/user-attachments/assets/04662426-e7ff-4a00-9838-14e125767895">
+waypoint_mission
 
-   You can now open the virtual desktop (see next section) or a terminal in VSCode inside the DevContainer:
-   
-   <img width="1158" alt="image" src="https://github.com/user-attachments/assets/088b150f-5cb7-4c0d-b18a-448944f15ffa">
+inventory_detector
+
+5. Launching the Simulation
+Step 1 – Start Gazebo with the custom world
+ros2 launch limo_gazebosim limo_gazebo_diff.launch.py \
+world:=src/emergency_inventory/emergency_inventory/worlds/robo_programming.world
+
+Step 2 – Start Navigation with the saved map
+ros2 launch limo_navigation limo_navigation.launch.py \
+map:=src/emergency_inventory/emergency_inventory/maps/robo_map.yaml \
+use_sim_time:=true
+
+Step 3 – Open RViz (Navigation View)
+rviz2 -d /opt/ros/lcas/install/limo_navigation/share/limo_navigation/rviz/limo_navigation.rviz
 
 
-### Devcontainer Features
+In RViz:
 
-The devcontainer includes a virtual 3D accelerated (if the host has an NVIDIA GPU and docker runtime installed) desktop.
+Ensure Map, TF, RobotModel, LaserScan, and AMCL cloud are enabled
+
+If required, initialise the robot pose using 2D Pose Estimate
+
+6. Running the Inventory node
+
+The detector subscribes to the robot camera feed and performs:
+
+Colour segmentation
+
+Shape analysis
+
+Object classification
+
+Duplicate suppression
+
+Object counting
+
+Run the detector node:
+
+ros2 run emergency_inventory inventory_node
 
 
-1. **Accessing the Desktop Interface:**
-   Open the user interface by navigating to the `PORTS` tab in VSCode, selected the URL labeled `desktop` to open it in your browser. You can also right-click on the URL it and choose "Preview in Editor" to have that desktop shown directly in VSCode, instead.
+Detected objects and running counts are printed to the terminal.
 
-   <img width="934" alt="image" src="https://github.com/user-attachments/assets/d90e90ed-3d46-465a-8589-0f96fee5cff2">
+7. Running the Autonomous Inspection Mission
 
-2. **Complete the connection:**
-   Click on "Connect".
+The waypoint mission uses Nav2 Simple Commander to:
 
-   <img width="404" alt="image" src="https://github.com/user-attachments/assets/33a370cb-6063-4242-ba34-c4997050dcae">
+Follow all predefined inspection waypoints
 
-   Your desktop will open. If you want the size of this virtual desktop to adjust automatically to your browser window, choose "Remote Resizing" in the options on the left hand side.
+Avoid obstacles dynamically
 
-   <img width="276" alt="image" src="https://github.com/user-attachments/assets/d455cb56-4eda-400d-bef2-bf1aa2ef1ca0">
+Replan paths if blocked
 
-### Enjoy Development!
+Return to the starting location at the end
 
-By leveraging this setup, you can develop on a remote machine with a lightweight desktop interface. Magic! Furthermore, this template package provides very nice ROS2 functionality like syntax highlight and template code generation. 
+Run:
 
-You can now use the VSCode terminal to launch all the commands you need and run code directly from VSCode in your devcontainer. Any windows you open from the terminal or from your code will appear in the virtual desktop (i.e. you Browser).
+ros2 run emergency_inventory waypoint_mission
 
-**All ROS2 packages should go into the `src/` folder. Create them with `ros2 pkg create...`.**
 
-**The devcontainer installs all dependencies of the workspace automatically as much as possible, and also tries to build the workspace when it is created, to speed up later colcon builds.**
+Mission progress and waypoint status are displayed in the terminal.
 
-### References
+8. Object Detection Logic
 
-1. [cmp3103-ws](https://github.com/UoL-SoCS/cmp3103-ws)
-2. [Get Started with Dev Containers in VS Code](https://youtu.be/b1RavPr_878?si=ADepc_VocOHTXP55)
+Objects are identified using a combination of colour and shape:
+
+Object Type	Colour	Shape
+Fire Extinguisher	Red	Vertical cylinder
+Medical Box	Green	Rectangular box
+Tool Case	Blue	Rectangular box
+
+To avoid double-counting:
+
+Each detected object is stored in map coordinates
+
+New detections are ignored if they are within a threshold distance of a previously detected object
+
+9. Navigation Behaviour
+
+The robot uses Nav2 global and local planners
+
+If a planned path becomes blocked, the robot automatically replans
+
+AMCL continuously refines localisation using LiDAR and the saved map
+
+If localisation quality degrades, AMCL can be reinitialised using:
+
+ros2 service call /reinitialize_global_localization std_srvs/srv/Empty
+
+10. Limitations and Future Improvements
+
+Object detection is rule-based and sensitive to lighting conditions
+
+Detection accuracy could be improved using CNN-based detectors (e.g. YOLO)
+
+Dynamic object tracking and semantic mapping could enhance performance
+
+11. Conclusion
+
+This project demonstrates a complete autonomous robotic inspection system, integrating:
+
+Navigation
+
+Localisation
+
+Mapping
+
+Vision-based object detection
+
+Decision-making and task execution
+
+
+Project GIT Repositry :
+
+https://github.com/saaruba/ROBO_Programming_Assignment.git
